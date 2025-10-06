@@ -12,6 +12,8 @@ builder.Services.AddCustomAuthorization();
 var app = builder.Build();
 
 // Middleware
+app.UseExceptionHandlerExtension();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -21,6 +23,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // Endpoints
 app.MapWeatherEndpoints();

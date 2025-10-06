@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using YAPA.Service;
+using YAPA.Interface;
 
 namespace YAPA.Extensions
 {
@@ -97,6 +99,9 @@ namespace YAPA.Extensions
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
+
             return services;
         }
     }
