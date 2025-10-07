@@ -1,3 +1,4 @@
+using YAPA.Db;
 using YAPA.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ builder.Services.AddSwagger();
 builder.Services.AddIdentityService();
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddCustomAuthorization();
+builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 
@@ -20,12 +22,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    await Seeder.InitializeAsync(scope.ServiceProvider);
+}
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 
 // Endpoints
+app.AuthEndpoints();
 app.MapWeatherEndpoints();
 
 app.Run();
