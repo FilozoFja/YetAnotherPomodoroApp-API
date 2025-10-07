@@ -4,6 +4,7 @@ using YAPA.Db;
 using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Auth;
+using YAPA.Models.Entities;
 
 namespace YAPA.Service;
 
@@ -30,8 +31,23 @@ public class AuthService : IAuthService
         if (result)
         {
             var token = _jwtGenerator.JwtGenerator(user);
-            return new LoginResponse(token, user.Email, user.Id);
+            var refreshToken = await GenerateRefreshToken(user);
+            return new LoginResponse(token, refreshToken.Token , user.Email, user.Id);
         }
         throw new UnauthorizedAccessException("Invalid email or password.");
+    }
+
+    private async Task<RefreshTokenModel> GenerateRefreshToken(UserModel user)
+    {
+        var refreshToken = new RefreshTokenModel
+        {
+            Token = Guid.NewGuid().ToString(),
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        user.RefreshTokens.Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+        return refreshToken;
     }
 }

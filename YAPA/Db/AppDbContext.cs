@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using YAPA.Models;
+using YAPA.Models.Entities;
 
 namespace YAPA.Db
 {
@@ -12,10 +13,16 @@ namespace YAPA.Db
 
         }
         public DbSet<PomodoroModel> Pomodoros { get; set; }
+        public DbSet<RefreshTokenModel> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<UserModel>()
+                .HasMany<RefreshTokenModel>()
+                .WithOne()
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
