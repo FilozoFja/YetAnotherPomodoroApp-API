@@ -5,6 +5,7 @@ using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Auth;
 using YAPA.Models.Entities;
+using YAPA.Models.Response;
 
 namespace YAPA.Service;
 
@@ -20,7 +21,7 @@ public class AuthService : IAuthService
         _jwtGenerator = jwtGenerator;
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<ResponseModel<LoginResponse>> LoginAsync(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
@@ -32,12 +33,18 @@ public class AuthService : IAuthService
         {
             var token = _jwtGenerator.JwtGenerator(user);
             var refreshToken = await GenerateRefreshToken(user);
-            return new LoginResponse(token, refreshToken.Token , user.Email, user.Id);
+            var loginData =  new LoginResponse(token, refreshToken.Token , user.Email, user.Id);
+            return new ResponseModel<LoginResponse>
+            {
+                Status = true,
+                Message = "Login successful",
+                Data = loginData
+            };
         }
         throw new UnauthorizedAccessException("Invalid email or password.");
     }
 
-    public async Task<TokenRefreshResponse> RefreshToken(string refreshToken, string email)
+    public async Task<ResponseModel<TokenRefreshResponse>> RefreshTokenAsync(string refreshToken, string email)
     {
         var user = await _context.Users
             .Include(u => u.RefreshTokens)
@@ -73,7 +80,14 @@ public class AuthService : IAuthService
     
         await _context.SaveChangesAsync();
 
-        return new TokenRefreshResponse(newJwtToken, newRefreshToken.Token);
+        var response = new ResponseModel<TokenRefreshResponse>
+        {
+            Status = true,
+            Message = "Token refreshed successfully",
+            Data = new TokenRefreshResponse(newJwtToken, newRefreshToken.Token)
+        };
+
+        return response;
     }
 
     private async Task<RefreshTokenModel> GenerateRefreshToken(UserModel user)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using YAPA.Models.Response;
 
 namespace YAPA.Extensions
 {
@@ -14,16 +15,17 @@ namespace YAPA.Extensions
                     var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
                     var exception = exceptionFeature?.Error;
 
-                    var problemDetails = new ProblemDetails
+                    var response = new ResponseModel<object>
                     {
-                        Title = "An unexpected error occurred.",
-                        Status = StatusCodes.Status500InternalServerError,
-                        Detail = exception?.Message
+                        Status = false,
+                        Message = "An error occurred while processing your request.",
+                        Data = null,
+                        Errors = new List<string> { exception?.Message ?? "No additional error information available." }
                     };
 
                     context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = problemDetails.Status ?? 500;
-                    await context.Response.WriteAsJsonAsync(problemDetails);
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    await context.Response.WriteAsJsonAsync(response);
                 });
             });
 

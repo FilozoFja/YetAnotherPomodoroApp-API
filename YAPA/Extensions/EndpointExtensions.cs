@@ -1,7 +1,17 @@
+using YAPA.Models.Pomodoro;
+
 namespace YAPA.Extensions
 {
     public static class EndpointExtensions
     {
+        public static IEndpointRouteBuilder PomodoroEndpoints( this IEndpointRouteBuilder app )
+        {
+            app.MapPost("/add-pomodoro", (AddPomodoroRequest request) =>
+            {
+
+            });
+            return app;
+        }
         public static IEndpointRouteBuilder MapWeatherEndpoints(this IEndpointRouteBuilder app)
         {
             var summaries = new[]

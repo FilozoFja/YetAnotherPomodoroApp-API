@@ -1,8 +1,9 @@
 using YAPA.Models.Auth;
+using YAPA.Models.Response;
 
 namespace YAPA.Interface;
 public interface IAuthService
 {
-    Task<LoginResponse> LoginAsync(LoginRequest request);
-    Task<TokenRefreshResponse> RefreshToken(string refreshToken, string email);
+    Task<ResponseModel<LoginResponse>> LoginAsync(LoginRequest request);
+    Task<ResponseModel<TokenRefreshResponse>> RefreshTokenAsync(string refreshToken, string email);
 }
