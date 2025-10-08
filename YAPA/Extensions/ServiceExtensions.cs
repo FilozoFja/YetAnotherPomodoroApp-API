@@ -101,6 +101,7 @@ namespace YAPA.Extensions
         {
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
+            services.AddScoped<IPomodoroService, PomodoroService>();
 
             return services;
         }

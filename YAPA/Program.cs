@@ -10,6 +10,7 @@ builder.Services.AddIdentityService();
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddCustomAuthorization();
 builder.Services.AddApplicationServices();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -33,7 +34,7 @@ app.UseAuthorization();
 
 
 // Endpoints
-app.AuthEndpoints();
-app.MapWeatherEndpoints();
+app.MapAuthEndpoints();
+app.PomodoroEndpoints();
 
 app.Run();

@@ -1,4 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using YAPA.Interface;
+using YAPA.Models;
 using YAPA.Models.Pomodoro;
+using YAPA.Models.Response;
 
 namespace YAPA.Extensions
 {
@@ -6,40 +11,33 @@ namespace YAPA.Extensions
     {
         public static IEndpointRouteBuilder PomodoroEndpoints( this IEndpointRouteBuilder app )
         {
-            app.MapPost("/add-pomodoro", (AddPomodoroRequest request) =>
+            app.MapPost("/add-pomodoro", async (AddPomodoroRequest request, ClaimsPrincipal user, IPomodoroService pomodoroService) =>
             {
-
-            });
-            return app;
-        }
-        public static IEndpointRouteBuilder MapWeatherEndpoints(this IEndpointRouteBuilder app)
-        {
-            var summaries = new[]
-            {
-                "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-            };
-
-            app.MapGet("/weatherforecast", () =>
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
                 {
-                    var forecast = Enumerable.Range(1, 5).Select(index =>
-                            new WeatherForecast
-                            (
-                                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                                Random.Shared.Next(-20, 55),
-                                summaries[Random.Shared.Next(summaries.Length)]
-                            ))
-                        .ToArray();
-                    return forecast;
-                })
-                .WithName("GetWeatherForecast")
-                .WithOpenApi();
+                    return Results.Unauthorized();
+                }
+                var result = await pomodoroService.AddPomodoroAsync(request, int.Parse(userId));
+                var response = new ResponseModel<PomodoroModel>
+                {
+                    Data = result,
+                    Message = "Pomodoro added successfully",
+                    Status = true
+                };
+                return Results.Ok(response);
+
+            }).WithName("AddPomodoro")
+            .WithSummary("Adding pomodoro")
+            .WithDescription("Saves user pomodoro to database");
+
+            app.MapGet("/whoami", (ClaimsPrincipal user) =>
+            {
+                var claims = user.Claims.Select(c => new { c.Type, c.Value });
+                return Results.Json(claims);
+            }).RequireAuthorization();
 
             return app;
         }
-    }
-
-    internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-    {
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
     }
 }
