@@ -46,6 +46,7 @@ namespace YAPA.Service
                 pomodoroDataResponseModel.CompletedPomodoros = pomodoro.Count(p => p.IsCompleted);
                 pomodoroDataResponseModel.FailedPomodoros = pomodoro.Count(p => !p.IsCompleted);
                 pomodoroDataResponseModel.PomodoroDateTimes = pomodoro.Select(p => p.EndTime).ToList();
+                pomodoroDataResponseModel.Date = DateTime.UtcNow;
 
                 response = new ResponseModel<PomodoroByDayResponse>
                 {
