@@ -89,6 +89,14 @@ public class AuthService : IAuthService
 
         return response;
     }
+    public async Task CheckIfUserExists(int userId)
+    {
+        var userExists = await _context.Users.AnyAsync(x => x.Id == userId);
+        if (!userExists)
+        {
+            throw new KeyNotFoundException($"User with ID {userId} not found");
+        }
+    }
 
     private async Task<RefreshTokenModel> GenerateRefreshToken(UserModel user)
     {

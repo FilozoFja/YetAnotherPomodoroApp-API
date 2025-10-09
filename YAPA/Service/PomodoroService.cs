@@ -3,23 +3,22 @@ using YAPA.Db;
 using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Pomodoro;
+using YAPA.Models.Response;
 
 namespace YAPA.Service
 {
     public class PomodoroService : IPomodoroService
     {
         private readonly AppDbContext _context;
-        public PomodoroService(AppDbContext context)
+        private readonly IAuthService _authService;
+        public PomodoroService(AppDbContext context, IAuthService authService)
         {
             _context = context;
+            _authService = authService;
         }
         public async Task<PomodoroModel> AddPomodoroAsync(AddPomodoroRequest request, int userId)
         {
-            var userExist = await _context.Users.AnyAsync(x => x.Id == userId);
-            if (!userExist)
-            {
-                throw new KeyNotFoundException($"User with ID {userId} not found");
-            }
+            await _authService.CheckIfUserExists(userId);
 
             var pomodoro = new PomodoroModel
             {
@@ -31,6 +30,41 @@ namespace YAPA.Service
             _context.Pomodoros.Add(pomodoro);
             await _context.SaveChangesAsync();
             return pomodoro;
+        }
+
+        public async Task<ResponseModel<PomodoroByDayResponse>> GetPomodoroByDate(DateTime date, int userId)
+        {
+            await _authService.CheckIfUserExists(userId);
+
+            List<PomodoroModel> pomodoro = await _context.Pomodoros
+                .Where(p => p.UserId == userId && p.EndTime.Date == date.Date).ToListAsync();
+            var response = new ResponseModel<PomodoroByDayResponse>();
+            if (pomodoro.Any())
+            {
+                PomodoroByDayResponse pomodoroDataResponseModel = new PomodoroByDayResponse();
+                pomodoroDataResponseModel.TotalDuration = pomodoro.Sum(p => p.Duration);
+                pomodoroDataResponseModel.CompletedPomodoros = pomodoro.Count(p => p.IsCompleted);
+                pomodoroDataResponseModel.FailedPomodoros = pomodoro.Count(p => !p.IsCompleted);
+                pomodoroDataResponseModel.PomodoroDateTimes = pomodoro.Select(p => p.EndTime).ToList();
+
+                response = new ResponseModel<PomodoroByDayResponse>
+                {
+                    Data = pomodoroDataResponseModel,
+                    Message = "Pomodoros fetched successfully",
+                    Status = true
+                };
+            }
+            else
+            {
+                response = new ResponseModel<PomodoroByDayResponse>
+                {
+                    Message = "No pomodoros found for the specified date. No data",
+                    Status = false
+                };
+            }
+
+            return response;
+            
         }
     }
 }

@@ -11,7 +11,7 @@ namespace YAPA.Extensions
     {
         public static IEndpointRouteBuilder PomodoroEndpoints( this IEndpointRouteBuilder app )
         {
-            app.MapPost("/add-pomodoro", async (AddPomodoroRequest request, ClaimsPrincipal user, IPomodoroService pomodoroService) =>
+            app.MapPost("/pomodoro", async (AddPomodoroRequest request, ClaimsPrincipal user, IPomodoroService pomodoroService) =>
             {
                 var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (userId == null)
@@ -30,12 +30,17 @@ namespace YAPA.Extensions
             }).WithName("AddPomodoro")
             .WithSummary("Adding pomodoro")
             .WithDescription("Saves user pomodoro to database");
-
-            app.MapGet("/whoami", (ClaimsPrincipal user) =>
+            app.MapGet("/pomodoro/by-day/{date}", (DateTime date, ClaimsPrincipal user, IPomodoroService pomodoroService) => 
             {
-                var claims = user.Claims.Select(c => new { c.Type, c.Value });
-                return Results.Json(claims);
-            }).RequireAuthorization();
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                {
+                    throw new UnauthorizedAccessException("User is unauthorized");
+                }
+                var response = pomodoroService.GetPomodoroByDate(date, int.Parse(userId));
+                return Results.Ok(response);
+            });
+            
 
             return app;
         }
