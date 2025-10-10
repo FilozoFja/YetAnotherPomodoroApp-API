@@ -1,5 +1,6 @@
 using YAPA.Db;
 using YAPA.Extensions;
+using YAPA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,11 +12,13 @@ builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment
 builder.Services.AddCustomAuthorization();
 builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddRedis(builder.Configuration);
 
 var app = builder.Build();
 
 // Middleware
 app.UseExceptionHandlerExtension();
+
 
 if (app.Environment.IsDevelopment())
 {

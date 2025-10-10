@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using StackExchange.Redis;
 using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Pomodoro;
@@ -41,7 +42,6 @@ namespace YAPA.Extensions
                 return Results.Ok(response);
             });
             
-
             return app;
         }
     }

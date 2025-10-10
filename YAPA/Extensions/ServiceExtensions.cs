@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using StackExchange.Redis;
 using YAPA.Service;
 using YAPA.Interface;
+using YAPA.Services;
 
 namespace YAPA.Extensions
 {
@@ -21,6 +23,16 @@ namespace YAPA.Extensions
             return services;
         }
 
+        public static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var connection = configuration.GetConnectionString("RedisConnection");
+                return ConnectionMultiplexer.Connect(connection);
+            });
+            return services;
+        }
+        
         public static IServiceCollection AddSwagger(this IServiceCollection services)
         {
             services.AddEndpointsApiExplorer();
@@ -102,6 +114,7 @@ namespace YAPA.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
             services.AddScoped<IPomodoroService, PomodoroService>();
+            services.AddScoped<UserStatusService>();
 
             return services;
         }
