@@ -13,6 +13,7 @@ builder.Services.AddCustomAuthorization();
 builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddRedis(builder.Configuration);
+builder.Services.AddRateLimiter();
 
 var app = builder.Build();
 
@@ -34,6 +35,7 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 
 // Endpoints

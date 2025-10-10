@@ -20,7 +20,6 @@ public class AuthService : IAuthService
         _userManager = userManager;
         _jwtGenerator = jwtGenerator;
     }
-
     public async Task<ResponseModel<LoginResponse>> LoginAsync(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);

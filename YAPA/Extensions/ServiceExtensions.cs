@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using StackExchange.Redis;
 using YAPA.Service;
 using YAPA.Interface;
@@ -28,6 +30,10 @@ namespace YAPA.Extensions
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var connection = configuration.GetConnectionString("RedisConnection");
+                if (string.IsNullOrEmpty(connection))
+                {
+                    throw new Exception("Redis connection string is empty");
+                }
                 return ConnectionMultiplexer.Connect(connection);
             });
             return services;
@@ -116,6 +122,21 @@ namespace YAPA.Extensions
             services.AddScoped<IPomodoroService, PomodoroService>();
             services.AddScoped<UserStatusService>();
 
+            return services;
+        }
+
+        public static IServiceCollection AddRateLimiter(this IServiceCollection services)
+        {
+            services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("fixed", opt =>
+                {
+                    opt.PermitLimit = 5;
+                    opt.Window = TimeSpan.FromSeconds(5);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 2;
+                });
+            });
             return services;
         }
     }

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
-using YAPA.Models;
 using YAPA.Models.Status;
 using YAPA.Services;
 
