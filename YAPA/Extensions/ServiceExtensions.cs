@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using StackExchange.Redis;
+using YAPA.Handlers;
 using YAPA.Service;
 using YAPA.Interface;
 using YAPA.Services;
@@ -125,6 +126,12 @@ namespace YAPA.Extensions
             return services;
         }
 
+        public static IServiceCollection AddApplicationHandlers(this IServiceCollection services)
+        {
+            services.AddScoped<PomodoroHandler>();
+
+            return services;
+        }
         public static IServiceCollection AddRateLimiter(this IServiceCollection services)
         {
             services.AddRateLimiter(options =>

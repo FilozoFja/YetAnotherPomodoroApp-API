@@ -14,6 +14,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddRedis(builder.Configuration);
 builder.Services.AddRateLimiter();
+builder.Services.AddApplicationHandlers();
 
 var app = builder.Build();
 
