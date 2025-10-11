@@ -129,6 +129,7 @@ namespace YAPA.Extensions
         public static IServiceCollection AddApplicationHandlers(this IServiceCollection services)
         {
             services.AddScoped<PomodoroHandler>();
+            services.AddScoped<AuthHandler>();
 
             return services;
         }

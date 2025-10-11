@@ -50,7 +50,14 @@ public class PomodoroHandler
         if (!int.TryParse(userId, out int userIdInt))
             throw new UnauthorizedAccessException("Unauthorized access attempt - no user ID in claims");
         
-        var response = await _service.GetPomodoroByDate(date, userIdInt);
+        var pomodoroByDay = await _service.GetPomodoroByDate(date, userIdInt);
+        
+        var response = new ResponseModel<PomodoroByDayResponse?>
+        {
+            Data = pomodoroByDay,
+            Message = "Pomodoros retrieved successfully",
+            Status = true
+        };
         return Results.Ok(response);
     }
 }

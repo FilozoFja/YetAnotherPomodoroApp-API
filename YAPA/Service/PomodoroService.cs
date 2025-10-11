@@ -3,7 +3,6 @@ using YAPA.Db;
 using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Pomodoro;
-using YAPA.Models.Response;
 
 namespace YAPA.Service
 {
@@ -32,38 +31,22 @@ namespace YAPA.Service
             return pomodoro;
         }
 
-        public async Task<ResponseModel<PomodoroByDayResponse>> GetPomodoroByDate(DateTime date, int userId)
+        public async Task<PomodoroByDayResponse> GetPomodoroByDate(DateTime date, int userId)
         {
             await _authService.CheckIfUserExists(userId);
 
             List<PomodoroModel> pomodoro = await _context.Pomodoros
                 .Where(p => p.UserId == userId && p.EndTime.Date == date.Date).ToListAsync();
-            var response = new ResponseModel<PomodoroByDayResponse>();
+            var pomodoroDataResponseModel = new PomodoroByDayResponse();
             if (pomodoro.Any())
             {
-                PomodoroByDayResponse pomodoroDataResponseModel = new PomodoroByDayResponse();
                 pomodoroDataResponseModel.TotalDuration = pomodoro.Sum(p => p.Duration);
                 pomodoroDataResponseModel.CompletedPomodoros = pomodoro.Count(p => p.IsCompleted);
                 pomodoroDataResponseModel.FailedPomodoros = pomodoro.Count(p => !p.IsCompleted);
                 pomodoroDataResponseModel.PomodoroDateTimes = pomodoro.Select(p => p.EndTime).ToList();
-                pomodoroDataResponseModel.Date = DateTime.UtcNow;
-
-                response = new ResponseModel<PomodoroByDayResponse>
-                {
-                    Data = pomodoroDataResponseModel,
-                    Message = "Pomodoros fetched successfully",
-                    Status = true
-                };
+                pomodoroDataResponseModel.Date = date.Date;
             }
-            else
-            {
-                response = new ResponseModel<PomodoroByDayResponse>
-                {
-                    Message = "No pomodoros found for the specified date. No data",
-                    Status = false
-                };
-            }
-            return response;
+            return pomodoroDataResponseModel;
             
         }
     }
