@@ -17,7 +17,7 @@ namespace YAPA.Extensions
                 .WithOpenApi();
 
             group.MapPost("/add-new",
-                    async (AddPomodoroRequest request, ClaimsPrincipal user, PomodoroHandler handler) => 
+                    async (AddPomodoroRequest request, ClaimsPrincipal user, PomodoroHandler handler) =>
                         await handler.HandleAddPomodoroAsync(request, user))
                 .WithName("AddPomodoro")
                 .WithSummary("Adding pomodoro")

@@ -8,53 +8,49 @@ namespace YAPA.Handlers;
 
 public class PomodoroHandler
 {
-    private readonly IPomodoroService _service;
+    private readonly IPomodoroService _pomodoroService;
+    private readonly IClaimsService _claimsService;
     
-    public PomodoroHandler(IPomodoroService service)
+    public PomodoroHandler(IPomodoroService pomodoroService, IClaimsService claimsService)
     {
-        _service = service;
+        _pomodoroService = pomodoroService;
+        _claimsService = claimsService;
     }
 
     public async Task<IResult> HandleAddPomodoroAsync(AddPomodoroRequest request, ClaimsPrincipal user)
     {
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-            throw new UnauthorizedAccessException("User is unauthorized");
+        //FLUENTVALIDATION DODAC
+        var userIdInt = _claimsService.GetUserIdFromClaims(user);
 
-        if (!int.TryParse(userId, out int userIdInt))
-            throw new UnauthorizedAccessException("Unauthorized access attempt - no user ID in claims");
-        
-
-        var result = await _service.AddPomodoroAsync(request, userIdInt);
-        var response = new ResponseModel<PomodoroModel>
+        var result = await _pomodoroService.AddPomodoroAsync(request, userIdInt);
+        var response = new ResponseModel<PomodoroModel>();
+        if (result != null)
         {
-            Data = result,
-            Message = "Pomodoro added successfully",
-            Status = true
-        };
-        return response.Status 
-            ? Results.Ok(response) 
-            : Results.Problem(
-                statusCode: StatusCodes.Status401Unauthorized,
-                title: "Unauthorized",
-                detail: response.Message
-            );
+            response.Data = result;
+            response.Message = "Pomodoro added successfully";
+            response.Status = true;
+        }
+        else
+        {
+            response.Message = "Failed to add pomodoro";
+            response.Status = false;
+            response.Data = null;
+        }
+        return Results.Ok(response);
     }
 
     public async Task<IResult> HandleGetPomodorosByDayAsync(DateTime date, ClaimsPrincipal user)
     {
-        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-            throw new UnauthorizedAccessException("User is unauthorized");
+        //FLUENTVALIDATION DODAC
+        var userIdInt = _claimsService.GetUserIdFromClaims(user);
 
-        if (!int.TryParse(userId, out int userIdInt))
-            throw new UnauthorizedAccessException("Unauthorized access attempt - no user ID in claims");
-        
-        var pomodoroByDay = await _service.GetPomodoroByDate(date, userIdInt);
+        var result = await _pomodoroService.GetPomodoroByDate(date, userIdInt);
+        if(result == null)
+            throw new Exception("Failed to retrieve pomodoros");
         
         var response = new ResponseModel<PomodoroByDayResponse?>
         {
-            Data = pomodoroByDay,
+            Data = result,
             Message = "Pomodoros retrieved successfully",
             Status = true
         };
