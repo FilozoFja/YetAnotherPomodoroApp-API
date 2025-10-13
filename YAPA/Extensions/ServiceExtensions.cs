@@ -7,12 +7,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.RateLimiting;
 using StackExchange.Redis;
 using YAPA.Handlers;
 using YAPA.Service;
 using YAPA.Interface;
 using YAPA.Services;
+using YAPA.Validators;
 
 namespace YAPA.Extensions
 {
@@ -145,6 +149,18 @@ namespace YAPA.Extensions
                     opt.QueueLimit = 2;
                 });
             });
+            return services;
+        }
+
+        public static IServiceCollection AddFluentValidation(this IServiceCollection services)
+        {
+            services.AddFluentValidation();
+            return services;
+        }
+
+        public static IServiceCollection AddModelsValidators(this IServiceCollection services)
+        {
+            services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
             return services;
         }
     }

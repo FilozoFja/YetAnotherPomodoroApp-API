@@ -15,6 +15,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddRedis(builder.Configuration);
 builder.Services.AddRateLimiter();
 builder.Services.AddApplicationHandlers();
+builder.Services.AddFluentValidation();
+builder.Services.AddModelsValidators();
 
 var app = builder.Build();
 
