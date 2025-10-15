@@ -125,6 +125,7 @@ namespace YAPA.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
             services.AddScoped<IPomodoroService, PomodoroService>();
+            services.AddScoped<IClaimsService,ClaimsService>();
             services.AddScoped<UserStatusService>();
 
             return services;
@@ -152,7 +153,7 @@ namespace YAPA.Extensions
             return services;
         }
 
-        public static IServiceCollection AddFluentValidation(this IServiceCollection services)
+        public static IServiceCollection AddFluentValidationService(this IServiceCollection services)
         {
             services.AddFluentValidation();
             return services;
@@ -161,6 +162,7 @@ namespace YAPA.Extensions
         public static IServiceCollection AddModelsValidators(this IServiceCollection services)
         {
             services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+            services.AddValidatorsFromAssemblyContaining<TokenRefreshRequestValidator>();
             return services;
         }
     }

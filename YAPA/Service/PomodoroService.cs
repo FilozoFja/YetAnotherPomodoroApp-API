@@ -17,6 +17,8 @@ namespace YAPA.Service
         }
         public async Task<PomodoroModel> AddPomodoroAsync(AddPomodoroRequest request, int userId)
         {
+
+
             await _authService.CheckIfUserExists(userId);
 
             var pomodoro = new PomodoroModel

@@ -1,3 +1,4 @@
+using FluentValidation;
 using System.Security.Claims;
 using YAPA.Interface;
 using YAPA.Models;
@@ -10,50 +11,50 @@ public class PomodoroHandler
 {
     private readonly IPomodoroService _pomodoroService;
     private readonly IClaimsService _claimsService;
-    
-    public PomodoroHandler(IPomodoroService pomodoroService, IClaimsService claimsService)
+    private readonly IValidator<AddPomodoroRequest> _addPomodoroRequestValidator;
+    public PomodoroHandler(IPomodoroService pomodoroService, IClaimsService claimsService,
+        IValidator<AddPomodoroRequest> addPomodoroRequestValidator)
     {
         _pomodoroService = pomodoroService;
         _claimsService = claimsService;
+        _addPomodoroRequestValidator = addPomodoroRequestValidator;
     }
 
     public async Task<IResult> HandleAddPomodoroAsync(AddPomodoroRequest request, ClaimsPrincipal user)
     {
-        //FLUENTVALIDATION DODAC
+        var validationResult = _addPomodoroRequestValidator.Validate(request);
+        if(!validationResult.IsValid)
+            return Results.BadRequest(new ResponseModel<Object>
+            {
+                Message = "There is a validation iss    ue.",
+                Status = false,
+                Errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            });
         var userIdInt = _claimsService.GetUserIdFromClaims(user);
-
         var result = await _pomodoroService.AddPomodoroAsync(request, userIdInt);
-        var response = new ResponseModel<PomodoroModel>();
-        if (result != null)
+
+        return Results.Ok( new ResponseModel<PomodoroModel>
         {
-            response.Data = result;
-            response.Message = "Pomodoro added successfully";
-            response.Status = true;
-        }
-        else
-        {
-            response.Message = "Failed to add pomodoro";
-            response.Status = false;
-            response.Data = null;
-        }
-        return Results.Ok(response);
+            Data = result,
+            Message = "Pomodoro added successfully",
+            Status = true
+        });
     }
 
     public async Task<IResult> HandleGetPomodorosByDayAsync(DateTime date, ClaimsPrincipal user)
     {
-        //FLUENTVALIDATION DODAC
         var userIdInt = _claimsService.GetUserIdFromClaims(user);
 
         var result = await _pomodoroService.GetPomodoroByDate(date, userIdInt);
         if(result == null)
             throw new Exception("Failed to retrieve pomodoros");
-        
-        var response = new ResponseModel<PomodoroByDayResponse?>
+
+        return Results.Ok(new ResponseModel<PomodoroByDayResponse>
         {
             Data = result,
             Message = "Pomodoros retrieved successfully",
             Status = true
-        };
-        return Results.Ok(response);
+        });
+
     }
 }
