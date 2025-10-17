@@ -11,15 +11,19 @@ public class AddPomodoroRequestValidator : AbstractValidator<AddPomodoroRequest>
             .Must(DateTimeValidate).WithMessage("Pomodoro should be with max 10 minutes delay.");
         RuleFor(x => x.Duration)
             .NotEmpty().WithMessage("Duration can't be empty.")
-            .LessThan(120).WithMessage("Max duration is 120 minutes.");
-        RuleFor(x => x.IsCompleted)
-            .NotEmpty().WithMessage("Bool isCompleted can not be empty.");
+            .Must(DurationValidate).WithMessage("Pomodoro should be more than 0 and less than 120 minutes.");
             
     }
     private bool DateTimeValidate(DateTime dateTime)
     {
-        DateTime timeNow = DateTime.UtcNow.AddHours(2);
-        var timeDifference = timeNow - dateTime;
-        return Math.Abs(timeDifference.Minutes) < 10 ? true : false;
+        var now = DateTime.UtcNow;
+        var difference = now - dateTime;
+        
+        return difference.TotalMinutes >= 0 && difference.TotalMinutes <= 10;
+    }
+
+    private bool DurationValidate(int duration)
+    {
+        return duration < 120 && duration > 0 ? true : false;
     }
 }

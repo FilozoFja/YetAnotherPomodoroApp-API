@@ -46,3 +46,5 @@ app.MapAuthEndpoints();
 app.PomodoroEndpoints();
 
 app.Run();
+
+public partial class Program { }

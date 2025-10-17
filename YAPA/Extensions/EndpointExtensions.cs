@@ -28,9 +28,9 @@ namespace YAPA.Extensions
                 .Produces(StatusCodes.Status500InternalServerError)
                 .RequireRateLimiting("fixed");
             
-            group.MapGet("/by-day/{date}",
-                    async (DateTime date, ClaimsPrincipal user, PomodoroHandler handler) => 
-                        await handler.HandleGetPomodorosByDayAsync(date,user)
+            group.MapGet("/by-day",
+                    async ([AsParameters] GetPomodoroByDayRequest pomodoroByDayRequest, ClaimsPrincipal user, PomodoroHandler handler) => 
+                        await handler.HandleGetPomodorosByDayAsync(pomodoroByDayRequest ,user)
             ).WithName("GetPomodoroByDate")
                 .WithSummary("Getting pomodoro by date")
                 .WithDescription("Getting pomodoro by date")

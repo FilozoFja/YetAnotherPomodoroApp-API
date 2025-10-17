@@ -20,6 +20,7 @@ public class AuthService : IAuthService
         _userManager = userManager;
         _jwtGenerator = jwtGenerator;
     }
+    
     public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
@@ -37,7 +38,6 @@ public class AuthService : IAuthService
         }
         throw new UnauthorizedAccessException("Invalid email or password.");
     }
-
     public async Task<TokenRefreshResponse> RefreshTokenAsync(string refreshToken, string email)
     {
         var user = await _context.Users
@@ -84,7 +84,6 @@ public class AuthService : IAuthService
             throw new KeyNotFoundException($"User with ID {userId} not found");
         }
     }
-
     private async Task<RefreshTokenModel> GenerateRefreshToken(UserModel user)
     {
         var refreshToken = new RefreshTokenModel

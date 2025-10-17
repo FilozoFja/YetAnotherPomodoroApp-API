@@ -17,13 +17,38 @@ namespace YAPA.Extensions
                     var response = new ResponseModel<object>
                     {
                         Status = false,
-                        Message = "An error occurred while processing your request.",
-                        Data = null,
-                        Errors = new List<string> { exception?.Message ?? "No additional error information available." }
+                        Data = null
                     };
+                    
+                    switch (exception)
+                    {
+                        case UnauthorizedAccessException:
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            response.Message = exception.Message;
+                            response.Errors = new List<string> { exception.Message };
+                            break;
+
+                        case KeyNotFoundException:
+                            context.Response.StatusCode = StatusCodes.Status404NotFound;
+                            response.Message = exception.Message;
+                            response.Errors = new List<string> { exception.Message };
+                            break;
+
+                        case ArgumentException:
+                        case InvalidOperationException:
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            response.Message = exception?.Message ?? "Bad request.";
+                            response.Errors = new List<string> { exception?.Message ?? "Invalid operation." };
+                            break;
+
+                        default:
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                            response.Message = "An error occurred while processing your request.";
+                            response.Errors = new List<string> { exception?.Message ?? "No additional error information available." };
+                            break;
+                    }
 
                     context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     await context.Response.WriteAsJsonAsync(response);
                 });
             });
