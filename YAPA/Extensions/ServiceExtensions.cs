@@ -6,8 +6,17 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.RateLimiting;
+using StackExchange.Redis;
+using YAPA.Handlers;
 using YAPA.Service;
 using YAPA.Interface;
+using YAPA.Services;
+using YAPA.Validators;
 
 namespace YAPA.Extensions
 {
@@ -21,6 +30,20 @@ namespace YAPA.Extensions
             return services;
         }
 
+        public static IServiceCollection AddRedis(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var connection = configuration.GetConnectionString("RedisConnection");
+                if (string.IsNullOrEmpty(connection))
+                {
+                    throw new Exception("Redis connection string is empty");
+                }
+                return ConnectionMultiplexer.Connect(connection);
+            });
+            return services;
+        }
+        
         public static IServiceCollection AddSwagger(this IServiceCollection services)
         {
             services.AddEndpointsApiExplorer();
@@ -102,7 +125,44 @@ namespace YAPA.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
             services.AddScoped<IPomodoroService, PomodoroService>();
+            services.AddScoped<IClaimsService,ClaimsService>();
+            services.AddScoped<UserStatusService>();
 
+            return services;
+        }
+
+        public static IServiceCollection AddApplicationHandlers(this IServiceCollection services)
+        {
+            services.AddScoped<PomodoroHandler>();
+            services.AddScoped<AuthHandler>();
+
+            return services;
+        }
+        public static IServiceCollection AddRateLimiter(this IServiceCollection services)
+        {
+            services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("fixed", opt =>
+                {
+                    opt.PermitLimit = 5;
+                    opt.Window = TimeSpan.FromSeconds(5);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 2;
+                });
+            });
+            return services;
+        }
+
+        public static IServiceCollection AddFluentValidationService(this IServiceCollection services)
+        {
+            services.AddFluentValidation();
+            return services;
+        }
+
+        public static IServiceCollection AddModelsValidators(this IServiceCollection services)
+        {
+            services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+            services.AddValidatorsFromAssemblyContaining<TokenRefreshRequestValidator>();
             return services;
         }
     }

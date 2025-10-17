@@ -1,5 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using YAPA.Handlers;
 using YAPA.Interface;
 using YAPA.Models;
 using YAPA.Models.Pomodoro;
@@ -9,39 +9,35 @@ namespace YAPA.Extensions
 {
     public static class EndpointExtensions
     {
+        
         public static IEndpointRouteBuilder PomodoroEndpoints( this IEndpointRouteBuilder app )
         {
-            app.MapPost("/pomodoro", async (AddPomodoroRequest request, ClaimsPrincipal user, IPomodoroService pomodoroService) =>
-            {
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId == null)
-                {
-                    return Results.Unauthorized();
-                }
-                var result = await pomodoroService.AddPomodoroAsync(request, int.Parse(userId));
-                var response = new ResponseModel<PomodoroModel>
-                {
-                    Data = result,
-                    Message = "Pomodoro added successfully",
-                    Status = true
-                };
-                return Results.Ok(response);
+            var group = app.MapGroup("/pomodoro")
+                .WithTags("Pomodoro")
+                .WithOpenApi();
 
-            }).WithName("AddPomodoro")
-            .WithSummary("Adding pomodoro")
-            .WithDescription("Saves user pomodoro to database");
-            app.MapGet("/pomodoro/by-day/{date}", (DateTime date, ClaimsPrincipal user, IPomodoroService pomodoroService) => 
-            {
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId == null)
-                {
-                    throw new UnauthorizedAccessException("User is unauthorized");
-                }
-                var response = pomodoroService.GetPomodoroByDate(date, int.Parse(userId));
-                return Results.Ok(response);
-            });
+            group.MapPost("/add-new",
+                    async (AddPomodoroRequest request, ClaimsPrincipal user, PomodoroHandler handler) =>
+                        await handler.HandleAddPomodoroAsync(request, user))
+                .WithName("AddPomodoro")
+                .WithSummary("Adding pomodoro")
+                .WithDescription("Saves user pomodoro to database")
+                .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status201Created)
+                .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status500InternalServerError)
+                .RequireRateLimiting("fixed");
             
-
+            group.MapGet("/by-day",
+                    async ([AsParameters] GetPomodoroByDayRequest pomodoroByDayRequest, ClaimsPrincipal user, PomodoroHandler handler) => 
+                        await handler.HandleGetPomodorosByDayAsync(pomodoroByDayRequest ,user)
+            ).WithName("GetPomodoroByDate")
+                .WithSummary("Getting pomodoro by date")
+                .WithDescription("Getting pomodoro by date")
+                .Produces<ResponseModel<PomodoroModel>>()
+                .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status401Unauthorized)
+                .RequireRateLimiting("fixed");
+            
             return app;
         }
     }

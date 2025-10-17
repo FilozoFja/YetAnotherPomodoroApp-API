@@ -1,5 +1,6 @@
 using YAPA.Db;
 using YAPA.Extensions;
+using YAPA.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,11 +12,17 @@ builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment
 builder.Services.AddCustomAuthorization();
 builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddRedis(builder.Configuration);
+builder.Services.AddRateLimiter();
+builder.Services.AddApplicationHandlers();
+builder.Services.AddFluentValidationService();
+builder.Services.AddModelsValidators();
 
 var app = builder.Build();
 
 // Middleware
 app.UseExceptionHandlerExtension();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -31,6 +38,7 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 
 // Endpoints
@@ -38,3 +46,5 @@ app.MapAuthEndpoints();
 app.PomodoroEndpoints();
 
 app.Run();
+
+public partial class Program { }
