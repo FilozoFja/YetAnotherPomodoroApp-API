@@ -13,14 +13,17 @@ public class PomodoroHandler
     private readonly IClaimsService _claimsService;
     private readonly IValidator<AddPomodoroRequest> _addPomodoroRequestValidator;
     private readonly IValidator<GetPomodoroByDayRequest> _getPomodoroByDayRequestValidator;
+    private readonly IValidator<WeeklyPomodoroRequest> _weeklyPomodoroRequestValidator;
     public PomodoroHandler(IPomodoroService pomodoroService, IClaimsService claimsService,
         IValidator<AddPomodoroRequest> addPomodoroRequestValidator,
-        IValidator<GetPomodoroByDayRequest> getPomodoroByDayRequestValidator)
+        IValidator<GetPomodoroByDayRequest> getPomodoroByDayRequestValidator,
+        IValidator<WeeklyPomodoroRequest> weeklyPomodoroRequestValidator)
     {
         _pomodoroService = pomodoroService;
         _claimsService = claimsService;
         _addPomodoroRequestValidator = addPomodoroRequestValidator;
         _getPomodoroByDayRequestValidator =  getPomodoroByDayRequestValidator;
+        _weeklyPomodoroRequestValidator = weeklyPomodoroRequestValidator;
     }
 
     public async Task<IResult> HandleAddPomodoroAsync(AddPomodoroRequest request, ClaimsPrincipal user)
@@ -68,5 +71,30 @@ public class PomodoroHandler
             Status = true
         });
 
+    }
+
+    public async Task<IResult> HandleGetWeeklyPomodoroRaportAsync(WeeklyPomodoroRequest weeklyPomodoroRequest,
+        ClaimsPrincipal user)
+    {
+        var validationResult = _weeklyPomodoroRequestValidator.Validate(weeklyPomodoroRequest);
+        if(!validationResult.IsValid)
+            return Results.BadRequest(new ResponseModel<Object>
+            {
+                Message = "There is a validation issue.",
+                Status = false,
+                Errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList()
+            });
+        var userIdInt = _claimsService.GetUserIdFromClaims(user);
+        
+        var result = await _pomodoroService.GetWeeklyPomodoro(weeklyPomodoroRequest.EndDateTime.ToDateTime(), userIdInt);
+        if(result == null)
+            throw new Exception("Failed to weekly pomodoros");
+        
+        return Results.Ok(new ResponseModel<List<WeeklyPomodoroResponse>>
+        {
+            Data = result,
+            Message = "Weekly pomodoros retrieved successfully",
+            Status = true
+        });
     }
 }

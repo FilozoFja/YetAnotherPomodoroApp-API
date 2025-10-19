@@ -125,7 +125,7 @@ namespace YAPA.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
             services.AddScoped<IPomodoroService, PomodoroService>();
-            services.AddScoped<IClaimsService,ClaimsService>();
+            services.AddTransient<IClaimsService,ClaimsService>();
             services.AddScoped<UserStatusService>();
 
             return services;
@@ -163,6 +163,9 @@ namespace YAPA.Extensions
         {
             services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
             services.AddValidatorsFromAssemblyContaining<TokenRefreshRequestValidator>();
+            services.AddValidatorsFromAssemblyContaining<GetWeeklyPomodoroValidator>();
+            services.AddValidatorsFromAssemblyContaining<AddPomodoroRequestValidator>();
+            services.AddValidatorsFromAssemblyContaining<GetPomodoroByDateDayValidator>();
             return services;
         }
     }

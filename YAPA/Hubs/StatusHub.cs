@@ -17,6 +17,7 @@ namespace YAPA.Hubs
         public override async Task OnConnectedAsync()
         {
             var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            
             if (userId != null)
             {
                 await _statusService.SetUserStatusAsync(int.Parse(userId), UserState.Online, TimeSpan.FromMinutes(10));

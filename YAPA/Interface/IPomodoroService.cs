@@ -8,6 +8,7 @@ namespace YAPA.Interface
     {
         Task<PomodoroModel> AddPomodoroAsync(AddPomodoroRequest request, int userId);
         Task<PomodoroByDayResponse> GetPomodoroByDate(DateTime date, int userId);
+        Task<List<WeeklyPomodoroResponse>> GetWeeklyPomodoro(DateTime dateRangeEnd, int userId);
 
     }
 }

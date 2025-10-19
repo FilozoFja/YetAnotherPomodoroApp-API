@@ -38,6 +38,17 @@ namespace YAPA.Extensions
                 .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status401Unauthorized)
                 .RequireRateLimiting("fixed");
             
+            group.MapGet("/by-week",
+                async ([AsParameters] WeeklyPomodoroRequest weeklyPomodoroRequest, ClaimsPrincipal user, PomodoroHandler handler) =>
+                await handler.HandleGetWeeklyPomodoroRaportAsync(weeklyPomodoroRequest,user)
+                ).WithName("GetWeeklyPomodoroRaport")
+                .WithSummary("Getting pomodoro by date")
+                .WithDescription("Getting pomodoro by date")
+                .Produces<ResponseModel<PomodoroModel>>()
+                .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status401Unauthorized)
+                .Produces<ResponseModel<PomodoroModel>>(StatusCodes.Status400BadRequest)
+                .RequireRateLimiting("fixed");
+            
             return app;
         }
     }

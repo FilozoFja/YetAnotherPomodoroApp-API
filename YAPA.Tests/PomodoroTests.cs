@@ -256,4 +256,227 @@ public class PomodoroTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     #endregion
+    
+    #region Get Weekly Pomodoro Tests
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithValidEndDate_ReturnsOk()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.True(result.Status);
+        Assert.Equal("Weekly pomodoros retrieved successfully", result.Message);
+        Assert.NotNull(result.Data);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var response = await _client.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithPastDate_ReturnsOk()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.True(result.Status);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithFutureDate_ReturnsOk()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7));
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.NotNull(result.Data);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithInvalidDateFormat_ReturnsBadRequest()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        
+        var response = await authenticatedClient.GetAsync("/pomodoro/by-week?endDateTime=invalid-date");
+        
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithEmptyDateParameter_ReturnsBadRequest()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        
+        var response = await authenticatedClient.GetAsync("/pomodoro/by-week?endDateTime=");
+        
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    #endregion
+
+    #region Integration Tests
+
+    [Fact]
+    public async Task Pomodoro_AddMultipleDays_AndGetByWeek_ReturnsWeeklySummary()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var now = DateTime.UtcNow;
+        
+        for (int i = 0; i < 3; i++)
+        {
+            var addRequest = new AddPomodoroRequest
+            {
+                EndTime = now.AddMinutes(-i * 2),
+                IsCompleted = true,
+                Duration = 25
+            };
+            var addResponse = await authenticatedClient.PostAsJsonAsync("/pomodoro/add-new", addRequest);
+            Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+        }
+    
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={now:yyyy-MM-ddTHH:mm:ss}");
+        
+        var content = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Status: {response.StatusCode}");
+        Console.WriteLine($"Response: {content}");
+    
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.NotNull(result.Data);
+        Assert.True(result.Data.Count > 0, "Should contain weekly pomodoro data");
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_EmptyWeek_ReturnsEmptyList()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(10));
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.NotNull(result.Data);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_VerifyDateRangeCalculation()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.NotNull(result.Data);
+        
+        foreach (var day in result.Data)
+        {
+            var dayDate = DateOnly.FromDateTime(day.PomodorosDate);
+            var daysDiff = endDate.DayNumber - dayDate.DayNumber;
+            Assert.True(daysDiff >= 0 && daysDiff < 7, $"Date {day.PomodorosDate} should be within last 7 days from {endDate}");
+        }
+    }
+
+    #endregion
+
+    #region Validation Tests
+
+    [Theory]
+    [InlineData("9999-12-31")] // Far future
+    [InlineData("2020-01-01")] // Past date
+    [InlineData("2025-10-19")] // Current date (adjust as needed)
+    public async Task Pomodoro_GetByWeek_WithVariousValidDates_ReturnsOk(string dateString)
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={dateString}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("2025-13-01")] 
+    [InlineData("2025-01-32")] 
+    [InlineData("not-a-date")]
+    public async Task Pomodoro_GetByWeek_WithInvalidDates_ReturnsBadRequest(string invalidDate)
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={invalidDate}");
+        
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    #endregion
+
+    #region Error Handling Tests
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_WithNullDate_ReturnsBadRequest()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        
+        var response = await authenticatedClient.GetAsync("/pomodoro/by-week?endDateTime=null");
+        
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pomodoro_GetByWeek_ValidatesResponseStructure()
+    {
+        var authenticatedClient = await GetAuthenticatedClientAsync();
+        var endDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        var response = await authenticatedClient.GetAsync($"/pomodoro/by-week?endDateTime={endDate:yyyy-MM-dd}");
+        
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
+        var result = await response.Content.ReadFromJsonAsync<ResponseModel<List<WeeklyPomodoroResponse>>>();
+        Assert.NotNull(result);
+        Assert.True(result.Status);
+        Assert.NotEmpty(result.Message);
+        Assert.NotNull(result.Data);
+        
+        foreach (var day in result.Data)
+        {
+            Assert.NotNull(day.PomodorosDate);
+            Assert.True(day.PomodoroCount >= 0);
+            Assert.True(day.PomodoroFinished >= 0);
+            Assert.True(day.Duration >= 0);
+        }
+    }
+
+    #endregion
 }

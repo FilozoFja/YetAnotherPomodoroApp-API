@@ -49,7 +49,31 @@ namespace YAPA.Service
                 pomodoroDataResponseModel.Date = date.Date;
             }
             return pomodoroDataResponseModel;
-            
         }
+
+        public async Task<List<WeeklyPomodoroResponse>> GetWeeklyPomodoro(DateTime dateRangeEnd, int userId)
+        {
+            await _authService.CheckIfUserExists(userId);
+            List<WeeklyPomodoroResponse> weeklyPomodoro = new List<WeeklyPomodoroResponse>();
+            var dateRangeStart = dateRangeEnd.AddDays(-7);
+            var pomodoros = await _context.Pomodoros
+                .Where(x => x.EndTime.Date <= dateRangeEnd.Date 
+                            && x.EndTime.Date >= dateRangeStart.Date 
+                            && x.UserId == userId)
+                .ToListAsync(); 
+    
+            var grouped = pomodoros
+                .GroupBy(x => x.EndTime.Date)
+                .Select(g => new WeeklyPomodoroResponse
+                {
+                    PomodorosDate = g.Key,
+                    PomodoroCount = g.Count(),
+                    PomodoroFinished = g.Count(p => p.IsCompleted),
+                    Duration = g.Sum(p => p.Duration)
+                })
+                .ToList();
+            return grouped;
+        }
+        
     }
 }
