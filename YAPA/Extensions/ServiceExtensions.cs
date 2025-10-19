@@ -119,6 +119,12 @@ namespace YAPA.Extensions
 
             return services;
         }
+        
+        public static IServiceCollection AddSignalRService(this IServiceCollection services)
+        {
+            services.AddSignalR();
+            return services;
+        }
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {

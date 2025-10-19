@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using YAPA.Interface;
 using YAPA.Models.Status;
 using YAPA.Services;
 
@@ -8,19 +10,21 @@ namespace YAPA.Hubs
     public class StatusHub : Hub
     {
         private readonly UserStatusService _statusService;
+        private readonly IClaimsService _claimsService;
 
-        public StatusHub(UserStatusService statusService)
+        public StatusHub(UserStatusService statusService, IClaimsService claimsService)
         {
             _statusService = statusService;
+            _claimsService = claimsService;
         }
-
+        
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _claimsService.GetUserIdFromClaims(Context.User);
             
-            if (userId != null)
+            if (userId > 0)
             {
-                await _statusService.SetUserStatusAsync(int.Parse(userId), UserState.Online, TimeSpan.FromMinutes(10));
+                await _statusService.SetUserStatusAsync(userId, UserState.Online, TimeSpan.FromMinutes(10));
                 await Clients.All.SendAsync("UserStatusChanged", new { userId, state = "Online" });
             }
 
@@ -29,10 +33,10 @@ namespace YAPA.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _claimsService.GetUserIdFromClaims(Context.User);
             if (userId != null)
             {
-                await _statusService.RemoveUserStatusAsync(int.Parse(userId));
+                await _statusService.RemoveUserStatusAsync(userId);
                 await Clients.All.SendAsync("UserStatusChanged", new { userId, state = "Offline" });
             }
 

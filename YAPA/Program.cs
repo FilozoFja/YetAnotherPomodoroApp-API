@@ -1,6 +1,6 @@
 using YAPA.Db;
 using YAPA.Extensions;
-using YAPA.Services;
+using YAPA.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +17,7 @@ builder.Services.AddRateLimiter();
 builder.Services.AddApplicationHandlers();
 builder.Services.AddFluentValidationService();
 builder.Services.AddModelsValidators();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -44,6 +45,8 @@ app.UseRateLimiter();
 // Endpoints
 app.MapAuthEndpoints();
 app.PomodoroEndpoints();
+app.MapHub<StatusHub>("/statusHub").RequireAuthorization();
+
 
 app.Run();
 
