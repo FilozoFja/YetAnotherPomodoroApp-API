@@ -34,7 +34,7 @@ namespace YAPA.Hubs
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = _claimsService.GetUserIdFromClaims(Context.User);
-            if (userId != null)
+            if (userId > 0)
             {
                 await _statusService.RemoveUserStatusAsync(userId);
                 await Clients.All.SendAsync("UserStatusChanged", new { userId, state = "Offline" });
@@ -45,15 +45,15 @@ namespace YAPA.Hubs
 
         public async Task UpdateStatus(string state, int durationMinutes = 0)
         {
-            var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId != null)
+            var userId = _claimsService.GetUserIdFromClaims(Context.User);
+            if (userId > 0)
             {
                 var parsed = Enum.TryParse<UserState>(state, out var newState)
                     ? newState
                     : UserState.Online;
 
                 var ttl = durationMinutes > 0 ? TimeSpan.FromMinutes(durationMinutes) : (TimeSpan?)null;
-                await _statusService.SetUserStatusAsync(int.Parse(userId), parsed, ttl);
+                await _statusService.SetUserStatusAsync(userId, parsed, ttl);
 
                 await Clients.All.SendAsync("UserStatusChanged", new { userId, state });
             }
